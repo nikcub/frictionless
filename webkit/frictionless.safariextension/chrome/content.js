@@ -27,6 +27,7 @@
 
 // Globals
 var hostRegExp = new RegExp('^(?:f|ht)tp(?:s)?\://([^/]+)', 'im');
+var FL_DEBUG = true;
 
 // 1. Cancel standalone dialogs
 var apps = [
@@ -71,11 +72,19 @@ function run_rewrites() {
 
 function run_story_rewrites() {
     var story_links = $("a[data-appname][rel='dialog'], a[data-appname][title], h6.ministoryMessage > a[target='_blank'], a[href^='http://online.wsj.com']");
+    if (FL_DEBUG && story_links.length > 0) {
+      console.info("Found " + story_links.length + " frictionless sharing elements");
+      console.info(story_links);
+    }
     story_links.forEach(kill_events_and_dialogs);
 };
 
 function run_link_rewrites() {
     var untrusted_links = $('a[href][onmousedown^="UntrustedLink"]');
+    if (FL_DEBUG && untrusted_links.length > 0) {
+      console.info("Found " + untrusted_links.length + " story links");
+      console.info(untrusted_links);
+    }
     untrusted_links.forEach(kill_external_link_warning);
 };
 
@@ -99,6 +108,10 @@ function rewrite_link(el) {
     var orig_url = el.href;
     var params = get_params(orig_url);
     var new_url = false;
+
+    if (FL_DEBUG) {
+      console.info("Rewriting link: " + orig_url);
+    }
     
     // 1. indy, guardian, etc.
     if ('redirect_uri' in params) {
@@ -136,7 +149,7 @@ function rewrite_link(el) {
     }
     
     if(new_url != orig_url) {
-      console.info('rewrote:', orig_url, new_url);
+      if (FL_DEBUG) console.info('  rewrote as:' + new_url);
       el.setAttribute('href', new_url);
     } else {
       console.info('no rewrite:', orig_url, new_url);
