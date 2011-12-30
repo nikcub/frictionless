@@ -210,7 +210,7 @@ function encode_qs(obj) {
 
 function anonymize_link(url) {
     // remove the facebook params in URLs to make the links anonymous
-    var dirty_vars = ['fb_action_ids', 'fb_action_types', 'fb_source', 'fb_ref'],
+    var dirty_vars = ['fb_action_ids', 'fb_action_types', 'fb_source', 'fb_ref', 'utm_medium', 'utm_source', 'utm_campaign', 'utm_content', 'ref'],
     dl = dirty_vars.length;
     var url_params = get_params(url);
     if (!url_params) return url;
