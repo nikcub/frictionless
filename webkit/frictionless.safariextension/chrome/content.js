@@ -40,8 +40,10 @@ var apps = [
 // WSJ Social
 180444840287,
 // The Guardian
-225771117449558
+225771117449558,
 // The Washington Post
+319227784756907,
+// Terra
 ];
 var appCount = apps.length;
 
@@ -70,7 +72,7 @@ function run_rewrites() {
 };
 
 function run_story_rewrites() {
-    var story_links = $("a[data-appname][rel='dialog'], a[data-appname][title], h6.ministoryMessage > a[target='_blank'], a[href^='http://online.wsj.com']");
+    var story_links = $("a[href*='connect/uiserver.php?app_id='], a[data-appname][rel='dialog'], a[data-appname][title], h6.ministoryMessage > a[target='_blank'], a[href^='http://online.wsj.com']");
     story_links.forEach(kill_events_and_dialogs);
 };
 
@@ -99,9 +101,16 @@ function rewrite_link(el) {
     var orig_url = el.href;
     var params = get_params(orig_url);
     var new_url = false;
-    
+
+    var params_length = 0;
+    for(var i in params) {
+        if (params.hasOwnProperty(i)) {
+            params_length++;
+        }
+    }
+
     // 1. indy, guardian, etc.
-    if (params.length && 'redirect_uri' in params) {
+    if (params_length && 'redirect_uri' in params) {
       new_url = anonymize_link(params['redirect_uri']);
       
     // 2. washpo social
@@ -133,7 +142,7 @@ function rewrite_link(el) {
     }
     
     if(new_url != orig_url) {
-      console.info('rewrote:', orig_url, new_url);
+      console.info('rewrote:', orig_url, '\nto:', new_url);
       el.setAttribute('href', new_url);
     } else {
       console.info('no rewrite:', orig_url, new_url);
@@ -194,12 +203,19 @@ function encode_qs(obj) {
 
 function anonymize_link(url) {
     // remove the facebook params in URLs to make the links anonymous
-    var dirty_vars = ['fb_action_ids', 'fb_action_types', 'fb_source', 'fb_ref'],
+    var dirty_vars = ['fb_action_ids', 'fb_action_types', 'fb_source', 'fb_ref', 'ref'],
     dl = dirty_vars.length;
     var url_params = get_params(url);
     if (!url_params) return url;
     var ret_url = '';
-    if (url_params.length < 1)
+
+    var url_params_length = 0;
+    for(var i in url_params) {
+        if (url_params.hasOwnProperty(i)) {
+            url_params_length++;
+        }
+    }
+    if (url_params_length < 1)
     return url;
     for (var x = 0; x < dl; x++) {
         if (dirty_vars[x] in url_params)
