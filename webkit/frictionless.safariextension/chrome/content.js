@@ -42,14 +42,17 @@ var apps = [
 // WSJ Social
 180444840287,
 // The Guardian
-225771117449558
+225771117449558,
 // The Washington Post
-];
+319227784756907,
+// Terra
+-1];
 var appCount = apps.length;
 
 for (var i = 0; i < appCount; i++) {
     if (
-    location.href.indexOf('dialog/permissions.request?app_id=' + apps[i]) + 1
+      (location.href.indexOf('dialog/permissions.request?app_id=' + apps[i]) + 1)
+      || (location.href.indexOf('dialog/oauth?client_id=' + apps[i]) + 1)
     ) {
         var button = document.getElementsByName('cancel_clicked')[0];
         console.info('cancel:', button);
@@ -72,11 +75,14 @@ function run_rewrites() {
 };
 
 function run_story_rewrites() {
-    var story_links = $("a[data-appname][rel='dialog'], a[data-appname][title], h6.ministoryMessage > a[target='_blank'], a[href^='http://online.wsj.com']");
+    // old selector
+    // var story_links = $("a[data-appname][rel='dialog'], a[data-appname][title], h6.ministoryMessage > a[target='_blank'], a[href^='http://online.wsj.com']");
+    var story_links = $("a[href*='connect/uiserver.php?app_id='], a[data-appname][rel='dialog'], a[data-appname][title], h6.ministoryMessage > a[target='_blank'], a[href^='http://online.wsj.com']");
     if (FL_DEBUG && story_links.length > 0) {
       console.info("Found " + story_links.length + " frictionless sharing elements");
       console.info(story_links);
     }
+
     story_links.forEach(kill_events_and_dialogs);
 };
 
@@ -105,17 +111,28 @@ function kill_events_and_dialogs(node) {
     rewrite_link(node);
 };
 
+function the_length(params) {
+    var params_length = 0;
+    for(var i in params) {
+        if (params.hasOwnProperty(i)) {
+            params_length++;
+        }
+    }
+    return params_length;
+}
+
 function rewrite_link(el) {
     var orig_url = el.href;
     var params = get_params(orig_url);
     var new_url = false;
+    var params_length = the_length(params);
 
     if (FL_DEBUG) {
       console.info("Rewriting link: " + orig_url);
     }
-    
+
     // 1. indy, guardian, etc.
-    if ('redirect_uri' in params) {
+    if (params_length && 'redirect_uri' in params) {
       new_url = anonymize_link(params['redirect_uri']);
       
       if (FL_DEBUG) console.info('rewrote redirect_uri: ', el);
@@ -158,7 +175,8 @@ function rewrite_link(el) {
     }
     
     if(new_url != orig_url) {
-      if (FL_DEBUG) console.info('rewrote as:' + new_url);
+      _d('rewrote as:' + new_url);
+      console.info('rewrote:', orig_url, '\nto:', new_url);
       el.setAttribute('href', new_url);
     } else {
       console.info('no rewrite:', orig_url, new_url);
@@ -224,7 +242,9 @@ function anonymize_link(url) {
     var url_params = get_params(url);
     if (!url_params) return url;
     var ret_url = '';
-    if (url_params.length < 1)
+
+    var url_params_length = the_length(url_params);
+    if (url_params_length < 1)
     return url;
     for (var x = 0; x < dl; x++) {
         if (dirty_vars[x] in url_params)
@@ -242,6 +262,17 @@ function get_host(url) {
     var match = url.match(re);
     if (match instanceof Array && match.length > 0) return match[1].toString().toLowerCase();
     return false;
+};
+
+function _d(msg) {
+  var al = arguments.length;
+  var lm = "";
+  if (FL_DEBUG) {
+    for(var i=0; i<=al; i++) {
+      lm += arguments[i];
+    }
+    console.info(lm);
+  }
 };
 
 function open_new_win(url, options) {
