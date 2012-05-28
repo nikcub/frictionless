@@ -28,6 +28,7 @@
 // Globals
 var hostRegExp = new RegExp('^(?:f|ht)tp(?:s)?\://([^/]+)', 'im');
 var FL_DEBUG = true;
+var FL_DEBUG_EXTERNS = false;
 
 // 1. Cancel standalone dialogs
 var apps = [
@@ -81,8 +82,8 @@ function run_story_rewrites() {
 
 function run_link_rewrites() {
     var untrusted_links = $('a[href][onmousedown^="UntrustedLink"]');
-    if (FL_DEBUG && untrusted_links.length > 0) {
-      console.info("Found " + untrusted_links.length + " story links");
+    if (FL_DEBUG_EXTERNS && untrusted_links.length > 0) {
+      console.info("Found " + untrusted_links.length + " external links");
       console.info(untrusted_links);
     }
     untrusted_links.forEach(kill_external_link_warning);
@@ -117,6 +118,8 @@ function rewrite_link(el) {
     if ('redirect_uri' in params) {
       new_url = anonymize_link(params['redirect_uri']);
       
+      if (FL_DEBUG) console.info('rewrote redirect_uri: ', el);
+      
     // 2. washpo social
     } else if (orig_url.substr(7, 12) == 'fb.trove.com' || orig_url.substr(8, 12) == 'fb.trove.com') {
       var title = el.getAttribute('title');
@@ -130,9 +133,11 @@ function rewrite_link(el) {
         if (title) {
           new_url = get_google_redirect_from_title(title);
         } else {
-          console.info('Trove link with no title:', el.href);
+          console.error('Trove link with no title:', el.href);
         }
       }
+      
+      if (FL_DEBUG) console.info('rewrote washpo: ', el);
       
     // 3. wsj
     } else if (orig_url.substr(7, 14) == 'online.wsj.com' || orig_url.substr(8, 14) == 'online.wsj.com') {
@@ -143,13 +148,17 @@ function rewrite_link(el) {
         console.info('wsj link with no title:', el.href);
       }
       
+      if (FL_DEBUG) console.info('rewrote wsj: ', el);
+      
     // 4. else it works
     } else {
       new_url = anonymize_link(orig_url);
+      
+      if (FL_DEBUG) console.info('rewrote else: ', el);
     }
     
     if(new_url != orig_url) {
-      if (FL_DEBUG) console.info('  rewrote as:' + new_url);
+      if (FL_DEBUG) console.info('rewrote as:' + new_url);
       el.setAttribute('href', new_url);
     } else {
       console.info('no rewrite:', orig_url, new_url);
